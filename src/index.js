@@ -1,12 +1,12 @@
-async function getClearbitDataFromTicketId(ticketId) {
+async function getClearbitDataFromTicketId(ticketId, env) {
 	// First we need to get the ticket from Trengo
-	const ticket = await trengoRequest(`/tickets/${ticketId}`);
+	const ticket = await trengoRequest(`/tickets/${ticketId}`, env);
 
 	// Get the contact's email address from the ticket
 	const email = ticket.contact.email;
 
 	// Get the Clearbit data using the email address
-	const data = await clearbitRequest(`https://person.clearbit.com/v2/combined/find?email=${email}`);
+	const data = await clearbitRequest(`https://person.clearbit.com/v2/combined/find?email=${email}`, env);
 
 	return {
 		fullName: data.person?.name?.fullName,
@@ -18,11 +18,11 @@ async function getClearbitDataFromTicketId(ticketId) {
 	}
 }
 
-async function trengoRequest(path, options = {}) {
+async function trengoRequest(path, env, options = {}) {
 	options = {
 		method: 'GET',
 		headers: {
-			'Authorization': `Bearer ${TRENGO_API_TOKEN}`,
+			'Authorization': `Bearer ${env.TRENGO_API_TOKEN}`,
 			'Content-Type': 'application/json',
 		},
 		...options,
@@ -32,11 +32,11 @@ async function trengoRequest(path, options = {}) {
 	return await res.json();
 }
 
-async function clearbitRequest(url, options = {}) {
+async function clearbitRequest(url, env, options = {}) {
 	options = {
 		method: 'GET',
 		headers: {
-			'Authorization': `Bearer ${CLEARBIT_API_TOKEN}`,
+			'Authorization': `Bearer ${env.CLEARBIT_API_TOKEN}`,
 			'Content-Type': 'application/json',
 		},
 		...options,
@@ -48,16 +48,16 @@ async function clearbitRequest(url, options = {}) {
 
 export default {
 	// This is where every request to our CF Worker comes in
-	async fetch(request) {
+	async fetch(request, env) {
 		// Get the URL params
 		const params = new URLSearchParams(request.url.split('?')?.[1] || '');
 
 		// Make sure the app token is valid
-		if (params.get('token') !== TRENGO_APP_TOKEN) {
+		if (params.get('token') !== env.TRENGO_APP_TOKEN) {
 			return new Response('Unauthorized', {status: 401});
 		}
 
-		const data = await getClearbitDataFromTicketId(params.get('ticket_id'))
+		const data = await getClearbitDataFromTicketId(params.get('ticket_id'), env)
 		return new Response(
 			JSON.stringify(data),
 			{
