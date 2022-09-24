@@ -53,7 +53,7 @@ export default {
 		const params = new URLSearchParams(request.url.split('?')?.[1] || '');
 
 		// Make sure the app token is valid
-		if (params.get('token') !== env.TRENGO_APP_TOKEN) {
+		if (params.get('auth_token') !== env.TRENGO_APP_TOKEN) {
 			return new Response('Unauthorized', {status: 401});
 		}
 
